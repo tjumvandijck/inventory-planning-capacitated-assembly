@@ -1,0 +1,119 @@
+#include "dynaplex/dcl.h"
+#include "dynaplex/parallel_execute.h"
+#include "dynaplex/policytrainer.h"
+#include "dynaplex/sampledata.h"
+#include "dynaplex/sample.h"
+
+
+namespace DynaPlex::Algorithms {
+
+
+	DCL::DCL(const DynaPlex::System& system, DynaPlex::MDP mdp, DynaPlex::Policy policy_0, const VarGroup& config, DynaPlex::Policy policy_initialState)
+		: system{ system }, mdp{ mdp }, policy_0{ nullptr }, sampleCollector(system,mdp,config), policy_initialState{ nullptr }
+	{
+		if (!mdp)
+			throw DynaPlex::Error("DCL: mdp should not be null");
+		config.GetOrDefault("rng_seed", rng_seed, 15112017);
+		if (rng_seed < 0)
+			throw DynaPlex::Error("DCL :: Invalid rng_seed - should be non-negative");
+		config.GetOrDefault("silent", silent, false);
+		config.GetOrDefault("retrain_lastgen_only", retrain_lastgen_only, false);
+		config.GetOrDefault("delete_samples_after_training", delete_samples_after_training, false);
+		config.GetOrDefault("keep_samples_lastgen_only", keep_samples_lastgen_only, false);
+		config.GetOrDefault("resume_gen", resume_gen,0);
+		config.GetOrDefault("num_gens", num_gens, 1);
+
+		//initiate policy_0, defaulting to random. 
+		if (policy_0)
+			this->policy_0 = policy_0;
+		else
+			this->policy_0 = mdp->GetPolicy("random");
+
+		//if (policy_initialState) {
+		//	this->policy_initialState = policy_initialState;
+		//}
+		//else {
+		//	this->policy_initialState = this->policy_0;
+
+		//}
+
+		VarGroup nn_training;
+		if (config.HasKey("nn_training"))
+			config.Get("nn_training", nn_training);
+
+		trainer = DynaPlex::NN::PolicyTrainer(system, mdp, nn_training,rng_seed);
+
+		if (config.HasKey("nn_architecture"))
+			config.Get("nn_architecture", nn_architecture);
+		else
+		{//default to neural network directly connecting input to output, i.e. logit model:
+			nn_architecture = DynaPlex::VarGroup{};
+			nn_architecture.Add("type", "mlp");
+			nn_architecture.Add("hidden_layers", DynaPlex::VarGroup::Int64Vec{});
+		}
+
+	}
+
+
+	void DCL::TrainPolicy() {
+
+		if (retrain_lastgen_only)
+		{
+			if(system.WorldRank()==0)
+				trainer.TrainPolicy(nn_architecture, num_gens, GetPathOfSampleFile(num_gens - 1),silent);
+		}
+		else
+		{
+			for (int64_t generation = resume_gen; generation < num_gens; generation++) {
+				DynaPlex::Policy policy = GetPolicy(generation);
+				if (!policy_initialState) {
+					policy_initialState = policy;
+				}
+				if (!silent)
+					system << "Elapsed time: " << system.Elapsed() << std::endl;
+				sampleCollector.GenerateStateSamples(policy, GetPathOfSampleFile(generation), policy_initialState);
+				if(!silent)
+					system << "Elapsed time: " << system.Elapsed() << std::endl;
+				if (system.WorldRank() == 0) {
+					trainer.TrainPolicy(nn_architecture, generation + 1, GetPathOfSampleFile(generation), silent);
+					if (delete_samples_after_training || (keep_samples_lastgen_only && generation < num_gens - 1))
+						system.remove_file(GetPathOfSampleFile(generation));
+				}
+				system.AddBarrier();
+			}
+		}
+	}
+
+
+	std::vector<DynaPlex::Policy> DCL::GetPolicies() {
+		std::vector<DynaPlex::Policy> policies;
+		for (int64_t generation = 0; generation <= num_gens; generation++)
+		{
+			policies.push_back(GetPolicy(generation));
+		}
+		return policies;
+	}
+
+	DynaPlex::Policy DCL::GetPolicy(int64_t generation)
+	{
+		if (generation == -1)
+			generation = num_gens;
+
+		if (generation < 0 || generation>num_gens)
+			throw DynaPlex::Error("Invalid generation requested: " + std::to_string(generation) + "/" + std::to_string(generation));
+
+		if (generation == 0)
+			return policy_0;
+
+		return trainer.LoadPolicy(nn_architecture, generation);
+	}
+
+
+	std::string DCL::GetPathOfSampleFile(int64_t generation)
+	{
+		std::string filename = "samples_gen" + std::to_string(generation);
+		filename += ".json";
+		//return this->system.filepath(this->mdp->Identifier(), nn_architecture.Identifier(), filename);
+		return this->system.filepath(this->mdp->Identifier(), filename);
+	}
+}

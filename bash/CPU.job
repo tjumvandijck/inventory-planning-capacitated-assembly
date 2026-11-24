@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --time=10:00:00 --exclusive --nodes=1 --ntasks-per-node=1 --cpus-per-task=192 --partition genoa --mem=160G 
+module load 2024
+module load CMake/3.29.3-GCCcore-13.3.0
+module load OpenMPI/5.0.3-GCC-13.3.0
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+
+cd ../out/LinRel/bin
+srun ./asml_assembly_nonstationary
+
+#cd ../python/test
+#conda activate envDP
+#srun python basics.py
