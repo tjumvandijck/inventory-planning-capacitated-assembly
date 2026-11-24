@@ -6,7 +6,19 @@ deep reinforcement learning, approximate dynamic programming, classical paramete
 DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc. 
 
 ---
+## Citation
 
+```bibtex
+@article{van2024inventory,
+  title={Inventory planning in capacitated high-tech assembly systems under non-stationary demand},
+  author={van Dijck, Tjum and Fleuren, Tijn and Temizoz, Tarkan and Merzifonluoglu, Yasemin and Hendriks, Maarten and van Jaarsveld, Willem},
+  journal={Available at SSRN 4843271},
+  year={2024}
+  url    = {https://ssrn.com/abstract=4843271}
+}
+```
+
+--- 
 ## High-level overview of folder structure
 
 - **`LICENSES/`**: Contains the licenses to used libraries and packages.
@@ -22,15 +34,6 @@ DynaPlex focuses on solving problems arising in Operations Management: Supply Ch
 
 ---
 
-## Cloning the Repository with Dependencies
-
-When cloning the repository, it's essential to also download the required submodules:
-
-```bash
-git clone --recurse-submodules https://github.com/WillemvJ/DynaPlexPrivate.git
-```
-
-if you did not recurse submodules, or if you use other tools for cloning repos, please somehow ensure that submodules (especially googletest) are available. 
 
 ### Prerequisites
 For defining new models, you will need:
@@ -50,30 +53,7 @@ In either case, you must provide a CMakeUserLists.txt in the root directory that
 
 ## Documentation
 
-Complete documentation can be found on the website: https://dynaplex-documentation.readthedocs.io
+Complete documentation of DynaPlex can be found on the website: https://dynaplex-documentation.readthedocs.io
 
 ---
 
-## Examples
-
-We provide several example implementations of MDPs, these can be found in [here](src/lib/models/models/). 
-
----
-
-## Contributing and Getting help
-
-We are very happy if you want to share your contributions to DynaPlex with the rest of the community.
-All contributions are submitted through GitHub Pull Requests. For all instructions see the docs/
-
-We are happy to discuss development and issues in the GitHub repository. Please open a new issue if you want to discuss something with us.
-When you find a bug: open a new issue in the repository, please include a short, self-contained code snippet that reproduces the problem.
-
----
-
-## Citing
-
-To do.
-
-## Algorithms
-
-The DCL algorithm is available, for an example usage see [here](src/executables/dcl_example/dcl_example.cpp). 
