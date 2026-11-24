@@ -6,6 +6,15 @@ deep reinforcement learning, approximate dynamic programming, classical paramete
 DynaPlex focuses on solving problems arising in Operations Management: Supply Chain, Transportation and Logistics, Manufacturing, etc. 
 
 ---
+
+# Inventory Planning in Capacitated High-Tech Assembly Systems Under Non-Stationary Demand
+
+Code for the paper
+
+> van Dijck, Tjum and Fleuren, Tijn and Temizoz, Tarkan and Merzifonluoglu, Yasemin and Hendriks, Maarten and van Jaarsveld, Willem (2024). *Inventory planning in capacitated high-tech assembly systems under non-stationary demand* Available at SSRN: <https://ssrn.com/abstract=4843271>
+
+
+---
 ## Citation
 
 ```bibtex
