@@ -14,7 +14,7 @@ The implementation of the paper's contributions can be found in:
 
 - [Executables](src/executables/asml_assembly_nonstationary/)
 - [Model implementation](src/lib/models/models/asml_assembly_nonstationary/)
-- [Model headers](src/lib/models/include/models/asml_assembly_nonstationary/)
+- [Model headers](src/lib/models/include/dynaplex/models/asml_assembly_nonstationary/)
 
 ---
 
