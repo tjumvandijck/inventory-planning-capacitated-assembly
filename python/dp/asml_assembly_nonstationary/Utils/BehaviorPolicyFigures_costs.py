@@ -117,13 +117,13 @@ def VisualizeCosts(stationary, p, save):
     plt.legend(fontsize=14, loc = 'upper left')
     if save:
         if stationary and p==50:
-            plt.savefig("MSOM-NN10_S_A_p50_withvalues.pdf", bbox_inches='tight')
+            plt.savefig("NN10_S_A_p50_withvalues.pdf", bbox_inches='tight')
         elif stationary and p==100:
-            plt.savefig("MSOM-NN10_S_A_p100_withvalues.pdf", bbox_inches='tight')
+            plt.savefig("NN10_S_A_p100_withvalues.pdf", bbox_inches='tight')
         elif not stationary and p==50:
-            plt.savefig("MSOM-NN10_NS_A_p50_withvalues.pdf", bbox_inches='tight')
+            plt.savefig("NN10_NS_A_p50_withvalues.pdf", bbox_inches='tight')
         elif not stationary and p==100:
-            plt.savefig("cost_graphs_revision.pdf", bbox_inches='tight')
+            plt.savefig("cost_graphs.pdf", bbox_inches='tight')
 
     plt.show()
 

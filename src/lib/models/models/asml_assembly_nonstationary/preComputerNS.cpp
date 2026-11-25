@@ -48,13 +48,13 @@ vector<vector<double>> preComputerNS::readAndValidateShortfallFile(
 	const string& filePath, const int64_t expectedRowCount) const {
 	ifstream shortfallFile(filePath);
 	if (!shortfallFile.is_open()) {
-		throw DynaPlex::Error("asml_assembly: cannot open shortfall CSV file '" + filePath + "'");
+		throw DynaPlex::Error("asml_assembly_nonstationary: cannot open shortfall CSV file '" + filePath + "'");
 	}
 
 	const vector<vector<string>> rows = readFile(shortfallFile);
 	if (static_cast<int64_t>(rows.size()) != expectedRowCount) {
 		throw DynaPlex::Error(
-			"asml_assembly: shortfall CSV file '" + filePath + "' has "
+			"asml_assembly_nonstationary: shortfall CSV file '" + filePath + "' has "
 			+ std::to_string(rows.size()) + " rows; expected "
 			+ std::to_string(expectedRowCount));
 	}
@@ -66,7 +66,7 @@ vector<vector<double>> preComputerNS::readAndValidateShortfallFile(
 	for (size_t rowIndex = 0; rowIndex < rows.size(); ++rowIndex) {
 		const vector<string>& row = rows.at(rowIndex);
 		if (row.empty() || (row.size() == 1 && row.front().empty())) {
-			throw DynaPlex::Error("asml_assembly: shortfall CSV file '" + filePath
+			throw DynaPlex::Error("asml_assembly_nonstationary: shortfall CSV file '" + filePath
 				+ "' contains an empty row at row " + std::to_string(rowIndex + 1));
 		}
 
@@ -84,19 +84,19 @@ vector<vector<double>> preComputerNS::readAndValidateShortfallFile(
 				probability = std::stod(entry, &parsedCharacters);
 			}
 			catch (const std::exception&) {
-				throw DynaPlex::Error("asml_assembly: shortfall CSV file '" + filePath
+				throw DynaPlex::Error("asml_assembly_nonstationary: shortfall CSV file '" + filePath
 					+ "' has a non-numeric value at row " + std::to_string(rowIndex + 1)
 					+ ", column " + std::to_string(columnIndex + 1));
 			}
 			for (size_t characterIndex = parsedCharacters; characterIndex < entry.size(); ++characterIndex) {
 				if (!std::isspace(static_cast<unsigned char>(entry.at(characterIndex)))) {
-					throw DynaPlex::Error("asml_assembly: shortfall CSV file '" + filePath
+					throw DynaPlex::Error("asml_assembly_nonstationary: shortfall CSV file '" + filePath
 						+ "' has a non-numeric value at row " + std::to_string(rowIndex + 1)
 						+ ", column " + std::to_string(columnIndex + 1));
 				}
 			}
 			if (!std::isfinite(probability) || probability < 0.0) {
-				throw DynaPlex::Error("asml_assembly: shortfall CSV file '" + filePath
+				throw DynaPlex::Error("asml_assembly_nonstationary: shortfall CSV file '" + filePath
 					+ "' has an invalid probability at row " + std::to_string(rowIndex + 1)
 					+ ", column " + std::to_string(columnIndex + 1));
 			}
@@ -104,7 +104,7 @@ vector<vector<double>> preComputerNS::readAndValidateShortfallFile(
 			distribution.push_back(probability);
 		}
 		if (std::abs(probabilitySum - 1.0) > probabilityTolerance) {
-			throw DynaPlex::Error("asml_assembly: probabilities in shortfall CSV file '" + filePath
+			throw DynaPlex::Error("asml_assembly_nonstationary: probabilities in shortfall CSV file '" + filePath
 				+ "' do not sum to one at row " + std::to_string(rowIndex + 1)
 				+ " (sum is " + std::to_string(probabilitySum) + ")");
 		}
@@ -138,26 +138,23 @@ preComputerNS preComputerNS::getPreComputer(const int64_t NumberofNodes, const d
 preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 
 	// Initialize variables
-	vector<vector<int64_t>> BOMmatrix_2vec;			// Contains the BOM matrix
-	vector<int64_t> Leadtime_vec;					// Contains the local production lead times
+	vector<vector<int64_t>> BOMmatrix_2vec;				// Contains the BOM matrix
+	vector<int64_t> Leadtime_vec;						// Contains the local production lead times
 	vector<double> h_vec;								// Contains the holding costs per node
-	vector<int64_t> CapacityofNodes_vec;			// Contains the capacity per node
+	vector<int64_t> CapacityofNodes_vec;				// Contains the capacity per node
 	vector<vector<double>> moveProb_2vec;				// Contains the probability of a move
-	vector<double> noiseProb_vec;				// Contains the forecast error distribution
-	int64_t noiseLength;							// Contains the length of the noise vector
-	int64_t startNoise;							// Contains the start of the noise
-	int64_t maxTree;							// Contains the max vertical position in demand tree
-	int64_t startMeanDem;						// The start mean demand of demand 
-	string BSlevelsDT_round;						// Contains the best rounding for DT base-stock levels without shortfall
-	string BSlevelsDT_shortfall_round;			// Contains the best rounding for DT base-stock levels with shortfall
-	string BSlevelsDT_shortfall_single_round;			// Contains the best rounding for DT base-stock levels with shortfall
-	string BSlevelsCN_round;						// Contains the best rounding for CN base-stock levels without shortfall
-	string BSlevelsCN_shortfall_round;			// Contains the best rounding for CN base-stock levels with shortfall
-	string BSlevelsCN_shortfall_single_round;			// Contains the best rounding for CN base-stock levels with shortfall
-	vector<int64_t> MaxInvatNodes_vec;			// Contains the maximum inventory per node for state space refinement
-	int64_t minimumorder;						// Contains the minimum order quantity, i.e., the minimum demand realization
-	int64_t lostsalespenalty;						// Contains the lost sales penalty
-	int64_t MaxBacklog;							// Contains the maximum backlog for state space refinement
+	vector<double> noiseProb_vec;						// Contains the forecast error distribution
+	int64_t noiseLength;								// Contains the length of the noise vector
+	int64_t startNoise;									// Contains the start of the noise
+	int64_t maxTree;									// Contains the max vertical position in demand tree
+	int64_t startMeanDem;								// The start mean demand of demand 
+	string base_stock_levels_round;							// Contains the best rounding for DT base-stock levels without shortfall
+	string BSlevelsDT_shortfall_round;					// Contains the best rounding for DT base-stock levels with shortfall
+	string base_stock_levels_shortfall_round;			// Contains the best rounding for DT base-stock levels with shortfall
+	vector<int64_t> MaxInvatNodes_vec;					// Contains the maximum inventory per node for state space refinement
+	int64_t minimumorder;								// Contains the minimum order quantity, i.e., the minimum demand realization
+	int64_t lostsalespenalty;							// Contains the lost sales penalty
+	int64_t MaxBacklog;									// Contains the maximum backlog for state space refinement
 
 	vector<vector<int64_t>> ESuccessors_2vec;		// Contains the vector of successors per node, including the node itself
 	vector<vector<int64_t>> ESuccessor_2vec;		// Contains vector of immediate successor	
@@ -172,23 +169,16 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 	int64_t downstreamposition;						// Contains the index of the on-hand inventory of the most downstream node
 	vector<vector<int64_t>> parallelDownNodes_2vec;			// Contains the indices of downstream nodes to balance with for node n
 	vector<vector<int64_t>> parallelUpNodes_2vec;			// Contains the indices of upstream nodes to balance with for node n
-	vector<bool> nonBottleneckNode_vec;			// True if the node is a non-bottleneck node
-
+	vector<bool> nonBottleneckNode_vec;						// True if the node is a non-bottleneck node
 
 	vector<double> demandProbsTr_vec;						// Contains the event probability, including the move and error			
-	vector<double> demProbs_tr_vec;				// Contains demand probabilities including the probability of reaching the final state	
-	vector<vector<double>> demandProbsTr_2vec;						// Contains the event probability, including the move and error			
+	vector<double> demProbs_tr_vec;							// Contains demand probabilities including the probability of reaching the final state	
+	vector<vector<double>> demandProbsTr_2vec;				// Contains the event probability, including the move and error			
 	vector<vector<double>> demProbs_tr_2vec;				// Contains demand probabilities including the probability of reaching the final state	
 
-
 	// Base-stock levels
-	vector<vector<int64_t>> BSlevelsDT_2vec;					// Contains the echelon DT base stock levels
-	vector<vector<int64_t>> BSlevelsDT_short_2vec;				// Contains the echelon DT base stock levels with our shortfall distribution
-	vector<vector<int64_t>> BSlevelsDT_shortsingle_2vec;		// Contains the echelon DT base stock levels with shortfall distribution computed by Huh et al.
-	vector<vector<int64_t>> BSlevelsCN_2vec;					// Contains the echelon CN base stock levels
-	vector<vector<int64_t>> BSlevelsCN_short_2vec;				// Contains the echelon CN base stock levels with our shortfall distribution
-	vector<vector<int64_t>> BSlevelsCN_shortsingle_2vec;		// Contains the echelon CN base stock levels with shortfall distribution computed by Huh et al.
-
+	vector<vector<int64_t>> base_stock_levels;					// Contains the echelon DT base stock levels
+	vector<vector<int64_t>> base_stock_levels_shortfall;		// Contains the echelon DT base stock levels with shortfall distribution computed by Huh et al.
 
 	std::vector<double> noiseprob4 = { 0.08,0.15, 0.2, 0.23, 0.15, 0.08, 0.05, 0.03, 0.02, 0.01 };
 	std::vector<double> noiseprobE1 = { 0.16,0.23,0.26, 0.2, 0.1, 0.05 };
@@ -196,94 +186,14 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 	std::vector<double> demandlist_20 = { 0.02, 0.05, 0.1, 0.14, 0.20, 0.19, 0.1, 0.06, 0.05, 0.03, 0.02, 0.02, 0.01, 0.01 };
 	std::vector<double> demandlistE_3 = { 0.04, 0.12, 0.16, 0.2, 0.23, 0.14, 0.06, 0.03, 0.02 };
 
-
 	// read the shortfall input file
 	// First decide which file to read depending on the input
-	string path = "../../../src/lib/models/models/asml_assembly_nonstationary/paramsDataShortfall/";
-	string filename_dt = "case7p50_dt";
-	//string filename_dt = "testNSp50dt";
-	string filename_cn = "case7p50_cn";
+	string path = "../../../src/lib/models/models/asml_assembly_nonstationary/data_shortfall/";
+	string filename_shortfall = "small_case_NS_L";
 
 
 	// Determine the case of the corresponding MDP configuration
-	if (NumberofNodes == 5) {
-		// General parameters
-		Leadtime_vec = { 3,2,2,1,1 };
-		h_vec = { 0.4,0.2,1.0,2.0,8.0 };
-		//CapacityofNodes_vec = { 11, 10, 11, 10, 11 };
-		CapacityofNodes_vec = { 11, 10, 11, 10, 10 };
-		lostsalespenalty = 5000;
-		//MaxBacklog = 1000;
-		//MaxInvatNodes_vec = { 1000, 1000, 1000, 1000, 1000 };
-		minimumorder = 4;
-		BOMmatrix_2vec = {
-			{ 0, 0, 0, 1, 0 },
-			{ 0, 0, 0, 1, 0 },
-			{ 0, 0, 0, 0, 1 },
-			{ 0, 0, 0, 0, 1 },
-			{ 0, 0, 0, 0, 0 },
-		};
-
-
-		// non-stationary & stationary specific parameters
-		if (!stationary) {
-			moveProb_2vec = { {0.845, 0.155}, {0.785, 0.215}, {0.8375, 0.1625}, {0.8, 0.2} };
-			moveProb_2vec = { {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2} };
-			noiseProb_vec = noiseprob4;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 10;
-			MaxInvatNodes_vec = { 60, 50, 60, 40, 50 };
-			MaxBacklog = 40;
-			if (p == 50) {
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-				filename_dt = "case7p50_dt";
-				//string filename_dt = "testNSp50dt";
-				filename_cn = "case7p50_cn";
-			}
-			else {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-				filename_dt = "case7p100_dt";
-				filename_cn = "case7p100_cn";
-			}
-		}
-		else {
-			moveProb_2vec = { {1.0,0}, {1.0,0}, {1.0,0}, {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-			MaxInvatNodes_vec = { 60, 45, 45, 35, 35 };
-			MaxBacklog = 30;
-			if (p == 50) {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case6p50";
-				//filename_dt = "testNSp50dt";
-
-			}
-			else {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case6p100";
-			}
-		}
-		noiseLength = noiseProb_vec.size();
-	}
-
-	else if ((NumberofNodes == 3) && (!assembly))
+	if ((NumberofNodes == 3) && (!assembly))
 	{
 		// General parameters		
 		Leadtime_vec = { 1, 1, 1 };
@@ -294,7 +204,6 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 				{ 0, 0, 1 },
 				{ 0, 0, 0 },
 		};
-
 
 		// non-stationary & stationary specific parameters
 		if (!stationary) {
@@ -308,29 +217,20 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			MaxInvatNodes_vec = { 12,12,26 };
 			minimumorder = 0;
 			if (p == 50) {
-
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				//BSlevelsCN_round = "maximum";
-				//BSlevelsCN_shortfall_round = "maximum";
-				//BSlevelsCN_shortfall_single_round = "maximum";
-				filename_dt = "case4p100_dt";
-				filename_cn = "case4p50_cn";
+				// Best rounding
+				base_stock_levels_round = "round-up";
+				base_stock_levels_shortfall_round = "round-down";
 			}
 			else {
-
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				//BSlevelsCN_round = "maximum";
-				//BSlevelsCN_shortfall_round = "maximum";
-				//BSlevelsCN_shortfall_single_round = "maximum";
-				filename_dt = "case4p100_dt";
-				filename_cn = "case4p100_cn";
+				// Best rounding
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "round-down";
 			}
+			filename_shortfall = "small_case_NS_L";
+
 		}
 		else {
+			// TODO: Check shortfall!!
 			CapacityofNodes_vec = { 10, 10, 10 };
 			MaxBacklog = 25;
 			moveProb_2vec = { {1.0,0} };
@@ -341,19 +241,16 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			MaxInvatNodes_vec = { 21, 21, 35 };
 			minimumorder = 4;
 			if (p == 50) {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case2p50";
-
+				// Best rounding
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "round-down";
 			}
 			else {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "minimum";
-				BSlevelsDT_shortfall_single_round = "minimum";
-				filename_dt = "case2p100";
-
+				// Best rounding
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "minimum";
 			}
+			filename_shortfall = "small_case_S_H";
 		}
 
 		noiseLength = noiseProb_vec.size();
@@ -381,31 +278,22 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			maxTree = 4;
 			minimumorder = 0;
 			if (p == 50) {
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
+				// Best rounding
+				base_stock_levels_round = "maximum";
+				base_stock_levels_shortfall_round = "maximum";
 
-				//BSlevelsDT_round = "round-up";
-				//BSlevelsDT_shortfall_round = "round-up";
-				//BSlevelsDT_shortfall_single_round = "round-up";
-				//BSlevelsCN_round = "maximum";
-				//BSlevelsCN_shortfall_round = "maximum";
-				//BSlevelsCN_shortfall_single_round = "maximum";
 				MaxBacklog = 10;							// Changed this to 10 as inv cap has been reduced
 				MaxInvatNodes_vec = { 14,12,19 };
-				filename_dt = "case4p100_dt";
-				filename_cn = "case3p50_cn";
 			}
 			else {
-
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
+				// Best rounding
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "round-down";
 				MaxBacklog = 14;
 				MaxInvatNodes_vec = { 12,8,23 };
-				filename_dt = "case4p100_dt";
-				filename_cn = "case3p100_cn";
 			}
+			filename_shortfall = "small_case_NS_L";
+
 		}
 		else {
 			moveProb_2vec = { { 1.0, 0} };
@@ -417,19 +305,18 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			MaxBacklog = 18;
 			minimumorder = 0;
 			if (p == 50) {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "minimum";
-				BSlevelsDT_shortfall_single_round = "minimum";
-				filename_dt = "case1p50";
+				// Best rounding
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "minimum";
 
 			}
 			else {
-				BSlevelsDT_round = "minimum";
-				BSlevelsDT_shortfall_round = "minimum";
-				BSlevelsDT_shortfall_single_round = "minimum";
-				filename_dt = "case1p50";
-
+				// Best rounding
+				base_stock_levels_round = "minimum";
+				base_stock_levels_shortfall_round = "minimum";
 			}
+			filename_shortfall = "small_case_S_L";
+
 		}
 		noiseLength = noiseProb_vec.size();
 	}
@@ -445,67 +332,6 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 				{ 0, 0, 0 },
 		};
 
-
-		//// non-stationary & stationary specific parameters
-		//if (!stationary) {
-		//	CapacityofNodes_vec = { 5,4,4 };
-		//	moveProb_2vec = { {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2} };
-		//	noiseProb_vec = noiseprobE1;
-		//	startNoise = -2;
-		//	startMeanDem = 2;
-		//	maxTree = 4;
-		//	minimumorder = 0;
-		//	if (p == 50) {
-		//		// Best rounding
-		//		BSlevelsDT_round = "round-up";
-		//		BSlevelsDT_shortfall_round = "round-up";
-		//		BSlevelsDT_shortfall_single_round = "round-up";
-
-
-		//	}
-		//	else {
-		//		// Best rounding
-		//		BSlevelsDT_round = "round-up";
-		//		BSlevelsDT_shortfall_round = "round-up";
-		//		BSlevelsDT_shortfall_single_round = "round-up";
-		//	}
-		//	
-		//	filename_dt = "case_heterogeneous_cap_NS_L";
-		//	filename_cn = "case3p50_cn";
-
-		//	// Compute the max inv and backlog still
-		//	MaxInvatNodes_vec = { 25, 10, 15 };
-		//	MaxBacklog = 32;							
-
-		//}
-		//else {
-		//	CapacityofNodes_vec = { 11, 10, 10 };
-		//	moveProb_2vec = { {1.0,0} };
-		//	noiseProb_vec = demandlist_20;
-		//	startNoise = -3;
-		//	startMeanDem = 7;
-		//	maxTree = 7;
-		//	MaxInvatNodes_vec = { 30, 12, 30 };
-		//	MaxBacklog = 31;
-		//	minimumorder = 4;
-		//	if (p == 50) {
-		//		// Best rounding
-		//		BSlevelsDT_round = "maximum";
-		//		BSlevelsDT_shortfall_round = "maximum";
-		//		BSlevelsDT_shortfall_single_round = "maximum";
-
-		//	}
-		//	else {
-		//		// Best rounding
-		//		BSlevelsDT_round = "maximum";
-		//		BSlevelsDT_shortfall_round = "maximum";
-		//		BSlevelsDT_shortfall_single_round = "maximum";
-
-		//	}
-		//	filename_dt = "case_heterogeneous_cap_S_H";
-
-		//}
-		// non-stationary & stationary specific parameters
 		if (!stationary) {
 			CapacityofNodes_vec = { 4,4,4 };
 			moveProb_2vec = { {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2} };
@@ -516,21 +342,16 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			minimumorder = 0;
 			if (p == 50) {
 				// Best rounding
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
-
-
+				base_stock_levels_round = "round-up";
+				base_stock_levels_shortfall_round = "round-up";
 			}
 			else {
 				// Best rounding
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
+				base_stock_levels_round = "round-up";
+				base_stock_levels_shortfall_round = "round-up";
 			}
 			
-			filename_dt = "case_heterogeneous_cap_NS_L2";
-			filename_cn = "case3p50_cn";
+			filename_shortfall = "small_case_NS_L";
 
 			MaxInvatNodes_vec = { 11, 11, 22 };
 			MaxBacklog = 34;							
@@ -547,54 +368,19 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			minimumorder = 4;
 			if (p == 50) {
 				// Best rounding
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
+				base_stock_levels_round = "maximum";
+				base_stock_levels_shortfall_round = "round-up";
 			}
 			else {
 				// Best rounding
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
+				base_stock_levels_round = "maximum";
+				base_stock_levels_shortfall_round = "round-up";
 
 			}
-			filename_dt = "case_heterogeneous_cap_S_H2";
+			filename_shortfall = "small_case_S_H";
 
 		}
-
 		noiseLength = noiseProb_vec.size();
-
-
-		//	moveProb_2vec = { { 1.0, 0} };
-		//	noiseProb_vec = demandlistE_3;
-		//	startNoise = -2;
-		//	startMeanDem = 2;
-		//	maxTree = 2;
-		//	MaxInvatNodes_vec = { 12,11,18 };
-		//	MaxBacklog = 18;
-		//	minimumorder = 0;
-		//	if (p == 50) {
-		//		// Best rounding 
-		//		BSlevelsDT_round = "round-up";
-		//		BSlevelsDT_shortfall_round = "round-up";
-		//		BSlevelsDT_shortfall_single_round = "round-up";
-
-		//	}
-		//	else {
-		//		// Best rounding 
-		//		BSlevelsDT_round = "round-down";
-		//		BSlevelsDT_shortfall_round = "round-down";
-		//		BSlevelsDT_shortfall_single_round = "round-up";
-
-		//	}
-		//	filename_dt = "case_heterogeneous_cap_S_L";
-		//	filename_cn = "case3p50_cn";
-
-		//	// Compute the max inv and backlog still
-		//	MaxInvatNodes_vec = { 25, 10, 15 };
-		//	MaxBacklog = 28;
-		//}
-		//noiseLength = noiseProb_vec.size();
 	}
 	else if ((NumberofNodes == 2) && (!assembly))
 	{
@@ -613,142 +399,28 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 		// non-stationary & stationary specific parameters
 		if (!stationary) {
 			moveProb_2vec = { {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2} };
-			// To do -> change this noise to the lower noise distribution
 			noiseProb_vec = noiseprob4;
 			startNoise = -3;
 			startMeanDem = 7;
 			maxTree = 10;
 			if (p == 50) {
 
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
-				//BSlevelsCN_round = "maximum";
-				//BSlevelsCN_shortfall_round = "maximum";
-				//BSlevelsCN_shortfall_single_round = "maximum";
-
-				filename_dt = "case5p50_dt";
-				filename_cn = "case5p50_cn";
+				base_stock_levels_round = "round-up";
+				base_stock_levels_shortfall_round = "round-up";
 			}
 			else {
 
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				//BSlevelsCN_round = "maximum";
-				//BSlevelsCN_shortfall_round = "maximum";
-				//BSlevelsCN_shortfall_single_round = "maximum";
-				filename_dt = "case5p100_dt";
-				filename_cn = "case5p100_cn";
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "round-down";
 			}
-		}
+			filename_shortfall = "small_case_NS_H";
 
-
-		else {
-			moveProb_2vec = { {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-			BSlevelsDT_round = "round-down";
-			BSlevelsDT_shortfall_round = "round-down";
-			BSlevelsDT_shortfall_single_round = "round-down";
-			filename_dt = "case5p100_S";
-		}
-		noiseLength = noiseProb_vec.size();
-	}
-	else if ((NumberofNodes == 7) && (assembly)) {
-		// General parameters		
-		Leadtime_vec = { 5, 6, 4, 2, 3, 2, 2 };
-		//Leadtime_vec = { 4, 5, 3, 2, 2, 1, 2 };
-
-		h_vec = { 0.5, 1.5, 0.3, 0.15, 0.8, 1.7, 8 };
-		lostsalespenalty = 5000;
-		BOMmatrix_2vec = {
-				{ 0, 0, 0, 0, 0, 1, 0},
-				{ 0, 0, 0, 0, 0, 0, 1},
-				{ 0, 0, 0, 0, 0, 1, 0},
-				{ 0, 0, 0, 0, 0, 1, 0},
-				{ 0, 0, 0, 0, 0, 0, 1},
-				{ 0, 0, 0, 0, 0, 0, 1},
-				{ 0, 0, 0, 0, 0, 0, 0},
-		};
-		CapacityofNodes_vec = { 11, 11, 10, 10, 10, 11, 11 };
-		MaxBacklog = 50;
-		MaxInvatNodes_vec = { 100, 120, 100, 100, 100, 100, 100 };
-		minimumorder = 4;
-
-		if (stationary) {
-			moveProb_2vec = { {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-			filename_dt = "caseN7Sp50_2";
-
-
-			if (p == 50) {
-				// BSlevelsDT_nobalancing_round = round-down
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-
-
-
-
-			}
-			else {
-				// Not checked yet
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				//filename_dt = "case10p50";
-			}
 		}
 		else {
-			moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1, 0} };
-			//moveProb_2vec = { {0.845, 0.155}, {0.785, 0.215}, {0.8375, 0.1625}, {0.8, 0.2} };
-			//moveProb_2vec = { {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2}, {0.8, 0.2} };
-			//moveProb_vec = { 0.8, 0.2 };
-			//noiseProb_vec = noiseprob4;
-
-			noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 10;
-			if (p == 50) {
-
-				// Best rouding for the higher AND lower noise
-				BSlevelsDT_round = "maximum";							// Best rounding option
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";			// Best rounding option
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-
-
-
-
-				filename_dt = "caseN7NSp50_dt_testlessN";
-				filename_cn = "caseN7NSp50_cn_testlessN";
-			}
-			else {
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "minimum";
-
-
-				filename_dt = "caseN7NSp50_dt_testlessN";
-				filename_cn = "caseN7NSp50_cn_testlessN";
-			}
+			throw DynaPlex::Error("asml_assembly_nonstationary: no setting found for the given number of nodes");
 		}
-
 	}
 	else if ((NumberofNodes == 10) && (assembly)) {
-		// General parameter: note that with the figure in the paper: nodes 10 and 9, and 7 and 8 are interchanged	-> holding costs in paper must be adjusted!
 		if (!ATO) {
 			Leadtime_vec = { 6, 5, 2, 4, 1, 2, 3, 2, 1, 2 };
 			h_vec = { 1.05, 0.4, 0.25, 0.2, 0.15, 0.1, 1.5, 0.2, 1.25, 8 };
@@ -789,8 +461,7 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			CapacityofNodes_vec = { 10, 11, 10, 10, 10, 10, 11, 10, 11, 11 };
 		}
 
-
-
+		// For the leading case, we do not set a maximum backlog and maximum inventory constraint
 		lostsalespenalty = 5000;
 		MaxBacklog = 2000;
 		std::cout << "Maxbacklog is " << MaxBacklog << std::endl;
@@ -804,28 +475,19 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 			startMeanDem = 7;
 			maxTree = 7;
 
-			if (p == 50) {
-				// BSlevelsDT_nobalancing_round = round-down
-				//BSlevelsDT_round = "maximum";
-
-
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case10p50";
+			if (p == 100) {
+				base_stock_levels_round = "round-down";
+				base_stock_levels_shortfall_round = "round-down";
+				filename_shortfall = "leading_case_S";
 			}
 			else {
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
-				filename_dt = "case10p50";
+				throw DynaPlex::Error("asml_assembly_nonstationary: no setting found for the given number of nodes");
 			}
 		}
 		else {
 			moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1, 0} };
 			noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
 
-			//noiseProb_vec = noiseprob4;
 			startNoise = -3;
 			startMeanDem = 7;
 			maxTree = 10;
@@ -834,392 +496,39 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 				if (!ATO) {
 					// Best rouding options 
 					if (p == 50) {
-						BSlevelsDT_round = "maximum";
-						BSlevelsDT_shortfall_round = "maximum";
-						BSlevelsDT_shortfall_single_round = "maximum";
+						base_stock_levels_round = "maximum";
+						base_stock_levels_shortfall_round = "maximum";
 					}
 					else {
-						BSlevelsDT_round = "maximum";
-						BSlevelsDT_shortfall_round = "maximum";
-						BSlevelsDT_shortfall_single_round = "maximum";
+						base_stock_levels_round = "maximum";
+						base_stock_levels_shortfall_round = "maximum";
 					}
-					filename_dt = "case10NSp50_dt_lessN (2)";
+					filename_shortfall = "leading_case_NS";
 				}
 				if (ATO) {
 					if (p == 100) {
 						// Best rounding options
-						BSlevelsDT_round = "maximum";
-						BSlevelsDT_shortfall_round = "maximum";
-						BSlevelsDT_shortfall_single_round = "maximum";
+						base_stock_levels_round = "maximum";
+						base_stock_levels_shortfall_round = "maximum";
 					}
-					filename_dt = "case10NSp50_dt_ATO";
+					filename_shortfall = "leading_case_ATO";
 				}
 			}
 			else if (homogeneous_capacity) {
-				filename_dt = "case10NSp50_dt_homogeneous_cap_11";
+				filename_shortfall = "leading_case_cap_11";
 				if (p == 100) {
 					// Best rounding
-					BSlevelsDT_round = "round-up";
-					BSlevelsDT_shortfall_round = "round-up";
-					BSlevelsDT_shortfall_single_round = "round-up";
+					base_stock_levels_round = "round-up";
+					base_stock_levels_shortfall_round = "round-up";
 				}
 			}
 			else {
-				filename_dt = "case10NSp50_dt_homogeneous_cap_10";
-				if (p == 100) {
-					// Best rounding
-					BSlevelsDT_round = "maximum";
-					BSlevelsDT_shortfall_round = "maximum";
-					BSlevelsDT_shortfall_single_round = "maximum";
-				}
-			}
-		}
-	}
-	else if ((NumberofNodes == 12) && (assembly)) {
-		// General parameters		
-		Leadtime_vec = { 5, 4, 6, 2, 3, 1, 2, 3, 3, 2, 1, 2 };
-		h_vec = { 0.4, 0.2, 0.95, 0.25, 0.2, 0.15, 0.1, 0.3, 1, 1.35, 0.5, 8 };
-		lostsalespenalty = 5000;
-		BOMmatrix_2vec = {
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		};
-		CapacityofNodes_vec = { 11, 10, 10, 10, 11, 10, 10, 10, 10, 11, 11, 11 };
-		MaxBacklog = 50;
-		MaxInvatNodes_vec = { 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 };
-		minimumorder = 4;
-
-		if (stationary) {
-			moveProb_2vec = { {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-
-			if (p == 50) {
-				// BSlevelsDT_nobalancing_round = round-down
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "caseN12Sp50";
-			}
-			else {
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "caseN12Sp50";
-			}
-		}
-		else {
-			moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1, 0} };
-			noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 10;
-			if (p == 50) {
-
-				BSlevelsDT_round = "maximum";							// Best rounding option
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";			// Best rounding option
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-
-				filename_dt = "caseN12NSp50_dt_lessN";
-				filename_cn = "caseN12NSp50_cn_lessN";
-			}
-			else {
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "minimum";
-
-
-				filename_dt = "caseN12NSp50_dt_lessN";
-				filename_cn = "caseN12NSp50_cn_lessN";
-			}
-		}
-	}
-	else if ((NumberofNodes == 15) && (assembly)) {
-		// General parameters	
-		Leadtime_vec = {
-		3, 4, 2, 5, 4, 1, 2, 3,
-			3, 3, 2, 2, 1, 1, 2
-		};
-
-		h_vec = {
-			0.3, 0.35, 0.2, 0.5, 0.3, 0.1, 0.15, 0.7,
-			0.5, 0.3, 0.2, 1.0, 0.1, 1.0, 8.0
-		};
-
-		CapacityofNodes_vec = {
-			10, 11, 10, 11, 11, 10, 11, 11,
-			10, 10, 10, 11, 10, 11, 11
-		};
-
-		lostsalespenalty = 5000;
-		BOMmatrix_2vec = {
-			{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-		};
-		MaxBacklog = 5000;
-		MaxInvatNodes_vec = { 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000 };
-		minimumorder = 4;
-
-		if (stationary) {
-			moveProb_2vec = { {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-
-			if (p == 50) {
-				// Still need to check this
-				// Here, differences between the rounding options within balancing
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case15p50";
-			}
-			else {
-				// Round up best for all rounding options
-				BSlevelsDT_round = "round-up";
-				BSlevelsDT_shortfall_round = "round-up";
-				BSlevelsDT_shortfall_single_round = "round-up";
-				filename_dt = "case15p50";
-			}
-		}
-		else {
-			moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1,0} };
-			noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 10;
-
-			if (p == 50) {
-				// Maximum is the best among all balancing options
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
-			}
-			else {
-				// Maximum is the best among all balancing options
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
-			}
-			filename_dt = "case15NSp50_dt_lessN";
-
-		}
-	}
-	//else if ((NumberofNodes == 15) && (assembly)) {
-	//	// General parameters	
-	//	Leadtime_vec = {
-	//	4, 2, 2, 5, 2, 4, 2, 1,
-	//		3, 3, 2, 2, 1, 1, 2
-	//	};
-
-	//	h_vec = {
-	//		0.35, 0.2, 0.25, 0.5, 0.15, 0.35, 0.4, 0.1,
-	//		0.6, 1.0, 0.2, 0.8, 0.1, 1.1, 8.0
-	//	};
-
-	//	CapacityofNodes_vec = {
-	//		11, 10, 10, 11, 11, 11, 10, 10,
-	//		10, 11, 10, 10, 11, 11, 11
-	//	};
-
-	//	lostsalespenalty = 5000;
-	//	BOMmatrix_2vec = {
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	//		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	//	};
-	//	MaxBacklog = 5000;
-	//	MaxInvatNodes_vec = { 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000 };
-	//	minimumorder = 4;
-
-	//	if (stationary) {
-	//		moveProb_2vec = { {1.0,0} };
-	//		noiseProb_vec = demandlist_20;
-	//		startNoise = -3;
-	//		startMeanDem = 7;
-	//		maxTree = 7;
-
-	//		if (p == 50) {
-	//			// Here, differences between the rounding options within balancing
-
-	//			// BSlevelsDT_BS_N_round = "round-up"
-	//			// BSlevelsDT_BS_N_shortfall_single_round = "round-down"
-	//			// BSlevelsDT_BS_R_round = "round-up"
-	//			// BSlevelsDT_BS_R_shortfall_single_round = "round-down"
-	//			// BSlevelsDT_BS_TW_round = "round-up"
-	//			// BSlevelsDT_BS_TW_shortfall_single_round = "round-down"
-
-
-	//			BSlevelsDT_round = "round-up";
-	//			BSlevelsDT_shortfall_round = "round-up";
-	//			BSlevelsDT_shortfall_single_round = "round-down";
-	//			filename_dt = "case15p50";
-	//		}
-	//		else {
-	//			// Round up best for all rounding options
-	//			BSlevelsDT_round = "round-up";
-	//			BSlevelsDT_shortfall_round = "round-up";
-	//			BSlevelsDT_shortfall_single_round = "round-up";
-	//			filename_dt = "case15p50";
-	//		}
-	//	}
-	//	else {
-	//		moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1,0} };
-	//		noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
-	//		startNoise = -3;
-	//		startMeanDem = 7;
-	//		maxTree = 10;
-
-	//		if (p == 50) {
-	//			// Maximum is the best among all balancing options
-	//			BSlevelsDT_round = "maximum";
-	//			BSlevelsDT_shortfall_round = "maximum";
-	//			BSlevelsDT_shortfall_single_round = "maximum";
-	//		}
-	//		else {
-	//			// Maximum is the best among all balancing options
-	//			BSlevelsDT_round = "maximum";
-	//			BSlevelsDT_shortfall_round = "maximum";
-	//			BSlevelsDT_shortfall_single_round = "maximum";
-	//		}
-	//		filename_dt = "case15NSp50_dt_lessN (2)";
-
-	//	}
-	//	}
-	else if ((NumberofNodes == 20) && (assembly)) {
-		// General parameters		
-		Leadtime_vec = { 4, 4, 3, 4, 5, 5, 3, 2, 4, 4, 2, 3, 1, 3, 3, 2, 2, 2, 1, 2 };
-		//h_vec = { 0.3, 0.6, 0.15, 0.4, 0.5, 1, 0.2, 0.25, 0.2, 0.9, 0.15, 0.2, 0.1, 0.5, 1.8, 0.1, 0.7, 1.4, 1.5, 16 };
-		h_vec = { 0.15, 0.3, 0.075, 0.2, 0.25, 0.5, 0.1, 0.125, 0.1, 0.45, 0.075, 0.1, 0.05, 0.25, 0.9, 0.05, 0.35, 0.7, 0.75, 8 };
-		lostsalespenalty = 5000;
-		BOMmatrix_2vec = {
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 },
-				{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-		};
-		CapacityofNodes_vec = { 11, 11, 10, 10, 10, 11, 11, 10, 10, 11, 11, 10, 11, 10, 11, 10, 11, 11, 10, 11 };
-		MaxBacklog = 1000;
-		MaxInvatNodes_vec = { 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000 };
-		minimumorder = 4;
-
-		if (stationary) {
-			moveProb_2vec = { {1.0,0} };
-			noiseProb_vec = demandlist_20;
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 7;
-
-			if (p == 50) {
-
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case20p50";
-			}
-			else {
-
-				BSlevelsDT_round = "round-down";
-				BSlevelsDT_shortfall_round = "round-down";
-				BSlevelsDT_shortfall_single_round = "round-down";
-				filename_dt = "case20p50";
-			}
-		}
-		else {
-			moveProb_2vec = { {0.803, 0.197}, {0.805, 0.195}, {0.8300, 0.1700}, {1,0} };
-			noiseProb_vec = { 0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04 };
-			startNoise = -3;
-			startMeanDem = 7;
-			maxTree = 10;
-
-			if (p == 50) {
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maximum";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-
-
-				filename_dt = "caseN20NSp50_dt_lessN";
-				filename_cn = "caseN20NSp50_cn_lessN";
-			}
-			else {
-				BSlevelsDT_round = "maximum";
-				BSlevelsDT_shortfall_round = "maximum";
-				BSlevelsDT_shortfall_single_round = "maxumum";
-				BSlevelsCN_round = "maximum";
-				BSlevelsCN_shortfall_round = "maximum";
-				BSlevelsCN_shortfall_single_round = "maximum";
-
-
-				filename_dt = "caseN20NSp50_dt_lessN";
-				filename_cn = "caseN20NSp50_cn_lessN";
+				throw DynaPlex::Error("asml_assembly_nonstationary: no setting found for the given number of nodes");
 			}
 		}
 	}
 	else {
-		throw DynaPlex::Error("asml_assembly: no setting found for the given number of nodes");
+		throw DynaPlex::Error("asml_assembly_nonstationary: no setting found for the given number of nodes");
 	}
 
 
@@ -1374,7 +683,7 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 
 	// Compute the base-stock levels
 	const auto base_stock_level_start = std::chrono::steady_clock::now();
-	BSlevelsDT_2vec = GetBaseStockLevelsDT(h_vec, Echelonlead_vec, EqSerialParam_2vec, SameSerial_vec, false, {}, BSlevelsDT_round, maxTree, startMeanDem, demLeadTimeDistr_DT, fractiles, noiseProb_vec, startNoise);
+	base_stock_levels = GetBaseStockLevelsDT(h_vec, Echelonlead_vec, EqSerialParam_2vec, SameSerial_vec, false, {}, base_stock_levels_round, maxTree, startMeanDem, demLeadTimeDistr_DT, fractiles, noiseProb_vec, startNoise);
 	const auto base_stock_level_end = std::chrono::steady_clock::now();
 	const auto base_stock_level_time = std::chrono::duration<double, std::milli>(base_stock_level_end - base_stock_level_start).count();
 
@@ -1390,38 +699,31 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 	const int64_t numberOfVerticalPositions = stationary
 		? 1
 		: maxTree - startMeanDem + 1;
-	const int64_t expectedShortfallRows = 2 * NumberofNodes * numberOfVerticalPositions;
-	const string shortfallFilePath = path + filename_dt + ".csv";
+	const int64_t expectedShortfallRows = NumberofNodes * numberOfVerticalPositions;
+	const string shortfallFilePath = path + filename_shortfall + ".csv";
 	const vector<vector<double>> shortfallRows =
 		readAndValidateShortfallFile(shortfallFilePath, expectedShortfallRows);
 
-	vector<vector<vector<double>>> shortfallsDT_3vec, shortfalls_single_3vec;
-	shortfallsDT_3vec.reserve(numberOfVerticalPositions);
+	vector<vector<vector<double>>> shortfalls_single_3vec;
 	shortfalls_single_3vec.reserve(numberOfVerticalPositions);
 	for (int64_t verticalPosition = 0; verticalPosition < numberOfVerticalPositions; ++verticalPosition) {
-		shortfallsDT_3vec.push_back({});
 		shortfalls_single_3vec.push_back({});
-		shortfallsDT_3vec.back().reserve(NumberofNodes);
 		shortfalls_single_3vec.back().reserve(NumberofNodes);
 
-		const int64_t firstRow = 2 * verticalPosition * NumberofNodes;
+		const int64_t firstRow = verticalPosition * NumberofNodes;
+
 		for (int64_t node = 0; node < NumberofNodes; ++node) {
-			// Nodes are stored from upstream (0) to downstream (NumberofNodes - 1).
-			shortfallsDT_3vec.back().push_back(shortfallRows.at(firstRow + node));
 			shortfalls_single_3vec.back().push_back(
-				shortfallRows.at(firstRow + NumberofNodes + node));
+				shortfallRows.at(firstRow + node));
 		}
 	}
 
-	BSlevelsDT_shortsingle_2vec = GetBaseStockLevelsDT(h_vec, Echelonlead_vec, EqSerialParam_2vec, SameSerial_vec, true, shortfalls_single_3vec, BSlevelsDT_shortfall_single_round, maxTree, startMeanDem, demLeadTimeDistr_DT, fractiles, noiseProb_vec, startNoise);
+	base_stock_levels_shortfall = GetBaseStockLevelsDT(h_vec, Echelonlead_vec, EqSerialParam_2vec, SameSerial_vec, true, shortfalls_single_3vec, base_stock_levels_shortfall_round, maxTree, startMeanDem, demLeadTimeDistr_DT, fractiles, noiseProb_vec, startNoise);
 	const auto base_stock_level_shortfall_end = std::chrono::steady_clock::now();
 	const auto base_stock_level_shortfall_time = std::chrono::duration<double, std::milli>(base_stock_level_shortfall_end - base_stock_level_shortfall_start).count();
 
 	const auto total_base_stock_time_shortfall = (base_stock_pred_time + base_stock_level_shortfall_time)/1000;
 	std::cout << "Base-stock computation time (shortfall): " << total_base_stock_time_shortfall << " s" << std::endl;
-
-	BSlevelsDT_short_2vec = GetBaseStockLevelsDT(h_vec, Echelonlead_vec, EqSerialParam_2vec, SameSerial_vec, true, shortfallsDT_3vec, BSlevelsDT_shortfall_round, maxTree, startMeanDem, demLeadTimeDistr_DT, fractiles, noiseProb_vec, startNoise);
-
 
 	// Non base-stock related computations
 	vector<vector<double>> avgdem_lt_vec;
@@ -1452,8 +754,6 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 		demProbs_tr_2vec.push_back(std::move(demProbs_tr_vec2));
 	}
 
-
-
 	// to flatten the state-space. 
 	frontposition_vec.reserve(NumberofNodes);
 	backposition_vec.reserve(NumberofNodes);
@@ -1470,9 +770,8 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 		Leadtime_vec, h_vec, CapacityofNodes_vec, moveProb_2vec, noiseProb_vec,
 		startNoise, maxTree, startMeanDem, BOMmatrix_2vec, lostsalespenalty, MaxBacklog, minimumorder, noiseLength, MaxInvatNodes_vec,
 		ESuccessors_2vec, ESuccessor_2vec, EPredecessor_2vec, EqSerialParam_2vec,
-		Echelonlead_vec, SerialEq_vec, SameSerial_vec, BSlevelsDT_2vec, BSlevelsDT_short_2vec, BSlevelsDT_shortsingle_2vec, BSlevelsCN_2vec, BSlevelsCN_short_2vec, BSlevelsCN_shortsingle_2vec,
+		Echelonlead_vec, SerialEq_vec, SameSerial_vec, base_stock_levels, base_stock_levels_shortfall, 
 		frontposition_vec, backposition_vec, downstreamposition, parallelDownNodes_2vec, parallelUpNodes_2vec, demProbs_tr_2vec, avgdem_lt_vec, nonBottleneckNode_vec);
-
 
 	return instance;
 }
@@ -1485,7 +784,6 @@ vector<vector<vector<vector<double>>>> preComputerNS::getDemandLeadtimeDist(cons
 	vector<vector<vector<vector<double>>>> cumleadtimedemand;
 
 	int64_t count = 0;
-
 
 	vector<vector<double> > demandlist_old;
 	vector<vector<double> > demandlistleadtime;
@@ -1643,8 +941,6 @@ vector<vector<vector<vector<double>>>> preComputerNS::getDemandLeadtimeDist(cons
 		demandlist_new.clear();
 		demandlist_new2.clear();
 
-
-
 	}
 
 	return cumleadtimedemand;
@@ -1722,7 +1018,6 @@ vector<vector<int64_t>> preComputerNS::GetBaseStockLevelsDT(const vector<double>
 
 			}
 
-
 			//// Fractiles[0] is for node 0, demLeadTimeDistr[0] is for node N-1, therefore, the changes with j
 			//std::cout << (p + holdingcostsupper) / (p + h_vec[NumberofNodes - 1]) << std::endl;
 			//std::cout << (p + holdingcostsupper) / (p + holdingcostsupper + EqSerialParam_2vec[0][j]) << std::endl;
@@ -1750,8 +1045,6 @@ vector<vector<int64_t>> preComputerNS::GetBaseStockLevelsDT(const vector<double>
 			else {
 				basestocklevels[o].push_back(basestockupperbound);
 			}
-
-
 		}
 	}
 
@@ -1775,17 +1068,6 @@ vector<vector<double>> preComputerNS::GetAvgDemand(const vector<vector<double>> 
 		for (int64_t i = 1; i <= Echelonlead_vec.at(0) + Echelonlead_vec[0] - Echelonlead_vec[NumberofNodes - 1]; i++) {
 			avg_dem_vec.at(0).push_back(mean_dem * i);
 		}
-
-		//double mean_dem2 = 0;
-
-		//for (int64_t i = 0; i < NumberofNodes; i++) {
-		//	mean_dem2 = 0;
-		//	for (int64_t n = 0; n < demLeadTimeDistr.at(0).at(NumberofNodes - 1 - i).size(); n++) {
-		//		mean_dem2 += demLeadTimeDistr.at(0).at(NumberofNodes - 1 - i).at(n).at(0) * demLeadTimeDistr.at(0).at(NumberofNodes - 1 - i).at(n).at(2);
-		//	}
-		//	avg_dem_vec2.at(0).push_back(mean_dem2);
-		//}
-
 	}
 	else {
 
@@ -1830,80 +1112,5 @@ vector<vector<double>> preComputerNS::GetAvgDemand(const vector<vector<double>> 
 		}
 	}
 
-
 	return avg_dem_vec;
 }
-
-
-
-
-vector<vector<int64_t>> preComputerNS::GetBaseStockLevelsCN(const vector<double> h_vec, const vector<int64_t> Echelonlead_vec, const vector<vector<double>> EqSerialParam_2vec, const vector<int64_t> SameSerial_vec, bool shortfall, vector<vector<vector<double>>> shortfalls_3vec, string rounding_BS_level, const vector<double> noiseProb_vec, const int64_t startNoise, const int64_t maxTree, const int64_t startMeanDem, const vector<vector<double>> fractiles) const
-{
-	vector<double> probabilities;
-	vector<vector<int64_t>> basestocklevels;
-	for (int64_t i = 0; i <= maxTree - startMeanDem; i++) {
-		basestocklevels.push_back({});
-	}
-
-	int64_t startDem = startMeanDem + startNoise;
-
-	for (int64_t o = 0; o <= maxTree - startMeanDem; o++) {
-		probabilities.clear();
-		// The demand starts from start mean demand + startnoise.
-		// Thus, add zero's to demand list since here the index equals the demand
-		for (int64_t i = 0; i < startDem + o; i++) {
-			probabilities.push_back(0);
-		}
-		for (int64_t i = 0; i < (noiseProb_vec.size()); i++) {
-			probabilities.push_back(noiseProb_vec[i]);
-		}
-
-		// j corresponds to the current node for which we compute the base-stock levels
-		for (int64_t j = 0; j <= (NumberofNodes - 1); j++)
-		{
-			int64_t basestockupperbound = 0;
-			int64_t basestocklowerbound = 0;
-
-			auto DemOverLeadtime = cust_dist.GetZeroDist();
-			auto probLTDist = cust_dist.GetCustomDist(probabilities);
-			DemOverLeadtime = cust_dist.Add(probLTDist);
-			for (int64_t k = 1; k < Echelonlead_vec[j]; k++)
-			{
-				DemOverLeadtime = DemOverLeadtime.Add(probLTDist);
-			}
-			if (shortfall) {
-				auto shortfallprob_dist = cust_dist.GetCustomDist(shortfalls_3vec[o][j]);
-				DemOverLeadtime = DemOverLeadtime.Add(shortfallprob_dist);
-			}
-			basestocklowerbound = DemOverLeadtime.Fractile(fractiles.at(0).at(j));
-			basestockupperbound = DemOverLeadtime.Fractile(fractiles.at(1).at(j));
-
-			// Rounding possibilities
-			if (rounding_BS_level == "round-up") {
-				auto k = 0.5 * (basestocklowerbound + basestockupperbound);
-				if (std::floor(k) == k) {
-					basestocklevels[o].push_back(0.5 * (basestocklowerbound + basestockupperbound));
-				}
-				else {
-					// round up
-					basestocklevels[o].push_back(0.5 * (basestocklowerbound + basestockupperbound + 1));
-				}
-			}
-			else if (rounding_BS_level == "round-down") {
-				basestocklevels[o].push_back(0.5 * (basestocklowerbound + basestockupperbound));
-			}
-			else if (rounding_BS_level == "minimum") {
-				basestocklevels[o].push_back(basestocklowerbound);
-			}
-			// maximum
-			else {
-				basestocklevels[o].push_back(basestockupperbound);
-			}
-
-
-
-		}
-	}
-	return basestocklevels;
-}
-

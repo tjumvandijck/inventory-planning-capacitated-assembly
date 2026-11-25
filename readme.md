@@ -5,6 +5,16 @@ Code for the paper
 
 > van Dijck, Tjum and Fleuren, Tijn and Temizoz, Tarkan and Merzifonluoglu, Yasemin and Hendriks, Maarten and van Jaarsveld, Willem (2024). *Inventory planning in capacitated high-tech assembly systems under non-stationary demand* Available at SSRN: <https://ssrn.com/abstract=4843271>
 
+This work uses the [DynaPlex framework](https://github.com/dynaplex/dynaplex)
+for simulation and the
+[Deep Controlled Learning for Inventory Control](https://www.sciencedirect.com/science/article/pii/S0377221725000463)
+algorithm as its deep reinforcement learning approach.
+
+The implementation of the paper's contributions can be found in:
+
+- [Executables](src/executables/asml_assembly_nonstationary/)
+- [Model implementation](src/models/models/asml_assembly_nonstationary/)
+- [Model headers](src/models/include/models/asml_assembly_nonstationary/)
 
 ---
 

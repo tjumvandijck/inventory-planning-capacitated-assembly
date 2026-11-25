@@ -176,14 +176,14 @@ def VisualizePolicyNodeInv(stationary, p, save, all_policies):
 
     if save:
         if stationary and p==50:
-            plt.savefig("MSOM-NN10_S_A_p50_avg_node_inv.pdf", bbox_inches='tight')
+            plt.savefig("NN10_S_A_p50_avg_node_inv.pdf", bbox_inches='tight')
         elif stationary and p==100:
-            plt.savefig("MSOM-NN10_S_A_p100_avg_node_inv.pdf", bbox_inches='tight')
+            plt.savefig("NN10_S_A_p100_avg_node_inv.pdf", bbox_inches='tight')
         elif not stationary and p==50:
             if all_policies:
-                plt.savefig("MSOM-NN10_NS_A_p50_avg_node_inv_allpolicies.pdf", bbox_inches='tight')
+                plt.savefig("NN10_NS_A_p50_avg_node_inv_allpolicies.pdf", bbox_inches='tight')
             else:
-                plt.savefig("MSOM-Poster-nodeinv.pdf", bbox_inches='tight')
+                plt.savefig("Poster-nodeinv.pdf", bbox_inches='tight')
         elif not stationary and p==100:
             plt.savefig("NN10_NS_A_p100_avg_node_inv.pdf", bbox_inches='tight')
 

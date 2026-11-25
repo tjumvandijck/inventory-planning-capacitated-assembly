@@ -63,8 +63,6 @@ public:
 		const int64_t startMeanDem;							// The start mean demand of demand 
 		const string BSlevelsDT_round;						// Contains the best rounding for DT base-stock levels without shortfall
 		const string BSlevelsDT_shortfall_round;			// Contains the best rounding for DT base-stock levels with shortfall
-		const string BSlevelsCN_round;						// Contains the best rounding for CN base-stock levels without shortfall
-		const string BSlevelsCN_shortfall_round;			// Contains the best rounding for CN base-stock levels with shortfall
 		const vector<int64_t> MaxInvatNodes_vec;			// Contains the maximum inventory per node for state space refinement
 		const int64_t minimumorder;							// Contains the minimum order quantity, i.e., the minimum demand realization
 		const int64_t lostsalespenalty;						// Contains the lost sales penalty
@@ -89,12 +87,8 @@ public:
 		const vector<vector<double>> avgdem_lt_vec;							// Contains the average demand over lead time
 
 		// Base-stock levels
-		const vector<vector<int64_t>> BSlevelsDT_2vec;					// Contains the echelon DT base stock levels
-		const vector<vector<int64_t>> BSlevelsDT_short_2vec;			// Contains the echelon DT base stock levels with our shortfall distribution
-		const vector<vector<int64_t>> BSlevelsDT_shortsingle_2vec;		// Contains the echelon DT base stock levels with shortfall distribution computed by Huh et al.
-		const vector<vector<int64_t>> BSlevelsCN_2vec;					// Contains the echelon CN base stock levels
-		const vector<vector<int64_t>> BSlevelsCN_short_2vec;			// Contains the echelon CN base stock levels with our shortfall distribution
-		const vector<vector<int64_t>> BSlevelsCN_shortsingle_2vec;		// Contains the echelon CN base stock levels with shortfall distribution computed by Huh et al.
+		const vector<vector<int64_t>> base_stock_levels;					// Contains the echelon DT base stock levels
+		const vector<vector<int64_t>> base_stock_levels_shortfall;		// Contains the echelon DT base stock levels with shortfall distribution computed by Huh et al.
 		const vector<vector<double>> fractiles;							// Contains the fractiles
 
 		paramSystemInstance(
@@ -103,8 +97,7 @@ public:
 			const int64_t minimumorder, const int64_t noiseLength, const vector<int64_t> MaxInvatNodes_vec,
 			const vector<vector<int64_t>> ESuccessors_2vec, const vector<vector<int64_t>> ESuccessor_2vec, const vector<vector<int64_t>> EPredecessor_2vec,
 			const vector<vector<double>> EqSerialParam_2vec, const vector<int64_t> Echelonlead_vec, const vector<int64_t> SerialEq_vec, const vector<int64_t> SameSerial_vec,
-			const vector<vector<int64_t>> BSlevelsDT_2vec, const vector<vector<int64_t>> BSlevelsDT_short_2vec, const vector<vector<int64_t>> BSlevelsDT_shortsingle_2vec,
-			const vector<vector<int64_t>> BSlevelsCN_2vec, const vector<vector<int64_t>> BSlevelsCN_short_2vec, const vector<vector<int64_t>> BSlevelsCN_shortsingle_2vec,
+			const vector<vector<int64_t>> base_stock_levels, const vector<vector<int64_t>> base_stock_levels_shortfall,
 			const vector<int64_t> frontposition_vec, const vector<int64_t> backposition_vec, const int64_t downstreamposition, const vector<vector<int64_t>> parallelDownNodes_2vec,
 			const vector<vector<int64_t>> parallelUpNodes_2vec, const vector<vector<double>> demProbs_tr_2vec, const vector<vector<double>> avgdem_lt_vec, const vector<bool> nonBottleneckNode_vec)
 			:Leadtime_vec{ Leadtime_vec }, h_vec{ h_vec }, CapacityofNodes_vec{ CapacityofNodes_vec }, moveProb_2vec{ moveProb_2vec }, noiseProb_vec{ noiseProb_vec },
@@ -112,8 +105,7 @@ public:
 			minimumorder{ minimumorder }, noiseLength{ noiseLength }, MaxInvatNodes_vec{ MaxInvatNodes_vec },
 			ESuccessors_2vec{ ESuccessors_2vec }, ESuccessor_2vec{ ESuccessor_2vec }, EPredecessor_2vec{ EPredecessor_2vec },
 			EqSerialParam_2vec{ EqSerialParam_2vec }, Echelonlead_vec{ Echelonlead_vec }, SerialEq_vec{ SerialEq_vec }, SameSerial_vec{ SameSerial_vec },
-			BSlevelsDT_2vec{ BSlevelsDT_2vec }, BSlevelsDT_short_2vec{ BSlevelsDT_short_2vec }, BSlevelsDT_shortsingle_2vec{ BSlevelsDT_shortsingle_2vec },
-			BSlevelsCN_2vec{ BSlevelsCN_2vec }, BSlevelsCN_short_2vec{ BSlevelsCN_short_2vec }, BSlevelsCN_shortsingle_2vec{ BSlevelsCN_shortsingle_2vec },
+			base_stock_levels{ base_stock_levels }, base_stock_levels_shortfall{ base_stock_levels_shortfall },
 			frontposition_vec{ frontposition_vec }, backposition_vec{ backposition_vec }, downstreamposition{ downstreamposition },
 			parallelDownNodes_2vec{ parallelDownNodes_2vec }, parallelUpNodes_2vec{ parallelUpNodes_2vec },
 			demProbs_tr_2vec{ demProbs_tr_2vec }, avgdem_lt_vec{ avgdem_lt_vec }, nonBottleneckNode_vec{ nonBottleneckNode_vec }
@@ -141,11 +133,8 @@ public:
 	//vector<vector<vector<vector<double>>>> getDemandLeadtimeDist(const vector<double> moveProb_vec, const vector<double> noiseProb_vec, const int64_t startNoise, const int64_t maxTree, const int64_t startMeanDem, const vector<int64_t> Echelonlead_vec, const vector<int64_t> SameSerial_vec) const;
 	vector<vector<vector<vector<double>>>> getDemandLeadtimeDist(const vector<vector<double>> moveProb_2vec, const vector<double> noiseProb_vec, const int64_t startNoise, const int64_t maxTree, const int64_t startMeanDem, const vector<int64_t> Echelonlead_vec, const vector<int64_t> SameSerial_vec) const;
 
-	// Function to compute the DT base-stock levels
+	// Function to compute the base-stock levels
 	vector<vector<int64_t>> GetBaseStockLevelsDT(const vector<double> h_vec, const vector<int64_t> Echelonlead_vec, const vector<vector<double>> EqSerialParam_2vec, const vector<int64_t> SameSerial_vec, bool shortfall, vector<vector<vector<double>>> shortfalls_3vec, string rounding_BS_level, const int64_t maxTree, const int64_t startMeanDem, const vector<vector<vector<vector<double>>>> demLeadTimeDistr, const vector<vector<double>> fractiles, const vector<double> noiseProb_vec, const int64_t startNoise) const;
-
-	// Function to compute the CN base-stock levels
-	vector<vector<int64_t>> GetBaseStockLevelsCN(const vector<double> h_vec, const vector<int64_t> Echelonlead_vec, const vector<vector<double>> EqSerialParam_2vec, const vector<int64_t> SameSerial_vec, bool shortfall, vector<vector<vector<double>>> shortfalls_3vec, string rounding_BS_level, const vector<double> noiseProb_vec, const int64_t startNoise, const int64_t maxTree, const int64_t startMeanDem, const vector<vector<double>> fractiles) const;
 
 	// Function to compute the factiles in the Shang and Song base-stock level computation
 	vector<vector<double>> GetFractileSS(const vector<double> h_vec, const vector<vector<double>> EqSerialParam_2vec, const vector<int64_t> SameSerial_vec, const double p, const int64_t NumberofNodes) const;

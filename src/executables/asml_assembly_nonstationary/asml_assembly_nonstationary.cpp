@@ -240,7 +240,7 @@ static std::string GetNeuralNetworkLocation(
     training_config.Get("num_gens", num_gens);
 
     return id +
-        "_NN_2_" + std::to_string(number_of_nodes) +
+        "_NN_" + std::to_string(number_of_nodes) +
         "_p" + std::to_string(backlog_penalty) +
         (assembly ? "_A" : "_S") +
         (stationary ? "_S" : "_NS") +
@@ -986,9 +986,8 @@ void TestTrajectories_notParallel() {
     test_config.Add("periods_per_trajectory", 10000);
 
     DynaPlex::VarGroup policy_config;
-    policy_config.Add("id", "dt_base_stock");
+    policy_config.Add("id", "balancing_base_stock");
     policy_config.Add("shortfall", true);
-    policy_config.Add("Huhetal", true);
 
 
 
@@ -1257,33 +1256,30 @@ static void TrainandTestPaperResults(
 
 
     DynaPlex::VarGroup policy_config_BS_TW;
-    policy_config_BS_TW.Add("id", "dt_base_stock");
+    policy_config_BS_TW.Add("id", "balancing_base_stock");
 
     DynaPlex::VarGroup policy_config_BS_R;
-    policy_config_BS_R.Add("id", "dt_base_stock");
+    policy_config_BS_R.Add("id", "balancing_base_stock");
     policy_config_BS_R.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config_BS_N;
-    policy_config_BS_N.Add("id", "dt_base_stock");
+    policy_config_BS_N.Add("id", "balancing_base_stock");
     policy_config_BS_N.Add("balancing_downstream", false);
     policy_config_BS_N.Add("balancing_upstream", false);
 
     DynaPlex::VarGroup policy_config_BS_TW_S;
-    policy_config_BS_TW_S.Add("id", "dt_base_stock");
+    policy_config_BS_TW_S.Add("id", "balancing_base_stock");
     policy_config_BS_TW_S.Add("shortfall", true);
-    policy_config_BS_TW_S.Add("Huhetal", true);
 
     DynaPlex::VarGroup policy_config_BS_R_S;
-    policy_config_BS_R_S.Add("id", "dt_base_stock");
+    policy_config_BS_R_S.Add("id", "balancing_base_stock");
     policy_config_BS_R_S.Add("shortfall", true);
-    policy_config_BS_R_S.Add("Huhetal", true);
     policy_config_BS_R_S.Add("balancing_upstream", true);
     policy_config_BS_R_S.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config_BS_N_S;
-    policy_config_BS_N_S.Add("id", "dt_base_stock");
+    policy_config_BS_N_S.Add("id", "balancing_base_stock");
     policy_config_BS_N_S.Add("shortfall", true);
-    policy_config_BS_N_S.Add("Huhetal", true);
     policy_config_BS_N_S.Add("balancing_upstream", false);
     policy_config_BS_N_S.Add("balancing_downstream", false);
 
@@ -1616,34 +1612,31 @@ void ComparePolicies(bool exact, bool nn) {
     test_config.Add("periods_per_trajectory", 10000);
 
     DynaPlex::VarGroup policy_config;
-    policy_config.Add("id", "dt_base_stock");
+    policy_config.Add("id", "balancing_base_stock");
 
     DynaPlex::VarGroup policy_config2;
-    policy_config2.Add("id", "dt_base_stock");
+    policy_config2.Add("id", "balancing_base_stock");
     policy_config2.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config3;
-    policy_config3.Add("id", "dt_base_stock");
+    policy_config3.Add("id", "balancing_base_stock");
     policy_config3.Add("balancing_downstream", false);
     policy_config3.Add("balancing_upstream", false);
 
     DynaPlex::VarGroup policy_config4;
-    policy_config4.Add("id", "dt_base_stock");
+    policy_config4.Add("id", "balancing_base_stock");
     policy_config4.Add("shortfall", true);
-    policy_config4.Add("Huhetal", true);
 
 
     DynaPlex::VarGroup policy_config5;
-    policy_config5.Add("id", "dt_base_stock");
+    policy_config5.Add("id", "balancing_base_stock");
     policy_config5.Add("shortfall", true);
-    policy_config5.Add("Huhetal", true);
     policy_config5.Add("balancing_upstream", true);
     policy_config5.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config6;
-    policy_config6.Add("id", "dt_base_stock");
+    policy_config6.Add("id", "balancing_base_stock");
     policy_config6.Add("shortfall", true);
-    policy_config6.Add("Huhetal", true);
     policy_config6.Add("balancing_upstream", false);
     policy_config6.Add("balancing_downstream", false);
 
@@ -1918,9 +1911,8 @@ void ComputeShortfall() {
 
 
     DynaPlex::VarGroup policy_config;
-    policy_config.Add("id", "dt_base_stock");
+    policy_config.Add("id", "balancing_base_stock");
     policy_config.Add("shortfall", false);
-    policy_config.Add("Huhetal", false);
 
     DynaPlex::MDP mdp = dp.GetMDP(config);
     auto policy = mdp->GetPolicy(policy_config);
@@ -1993,10 +1985,10 @@ void ComputeShortfall() {
 
 
                 if (BS_state.currentNode != NumberofNodes - 1) {
-                    ++shortfall_results_3vec.at(BS_state.verticalpos).at(BS_state.currentNode + 1).at(int64_t(eval_mdp.BSlevelsDT_2vec[BS_state.verticalpos][BS_state.currentNode + 1]) - BS_state.echelonInv_vec.at(BS_state.currentNode + 1));
+                    ++shortfall_results_3vec.at(BS_state.verticalpos).at(BS_state.currentNode + 1).at(int64_t(eval_mdp.base_stock_levels[BS_state.verticalpos][BS_state.currentNode + 1]) - BS_state.echelonInv_vec.at(BS_state.currentNode + 1));
                 }
                 else {
-                    ++shortfall_results_3vec.at(BS_state.verticalpos).at(0).at(int64_t(eval_mdp.BSlevelsDT_2vec[BS_state.verticalpos][0]) - BS_state.echelonInv_vec.at(0));
+                    ++shortfall_results_3vec.at(BS_state.verticalpos).at(0).at(int64_t(eval_mdp.base_stock_levels[BS_state.verticalpos][0]) - BS_state.echelonInv_vec.at(0));
                 }
 
 
@@ -2072,34 +2064,31 @@ void TestInventoryperNode(bool nn) {
     test_config.Add("periods_per_trajectory", 10000);
 
     DynaPlex::VarGroup policy_config;
-    policy_config.Add("id", "dt_base_stock");
+    policy_config.Add("id", "balancing_base_stock");
 
     DynaPlex::VarGroup policy_config2;
-    policy_config2.Add("id", "dt_base_stock");
+    policy_config2.Add("id", "balancing_base_stock");
     policy_config2.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config3;
-    policy_config3.Add("id", "dt_base_stock");
+    policy_config3.Add("id", "balancing_base_stock");
     policy_config3.Add("balancing_downstream", false);
     policy_config3.Add("balancing_upstream", false);
 
     DynaPlex::VarGroup policy_config4;
-    policy_config4.Add("id", "dt_base_stock");
+    policy_config4.Add("id", "balancing_base_stock");
     policy_config4.Add("shortfall", true);
-    policy_config4.Add("Huhetal", true);
 
 
     DynaPlex::VarGroup policy_config5;
-    policy_config5.Add("id", "dt_base_stock");
+    policy_config5.Add("id", "balancing_base_stock");
     policy_config5.Add("shortfall", true);
-    policy_config5.Add("Huhetal", true);
     policy_config5.Add("balancing_upstream", true);
     policy_config5.Add("balancing_downstream", false);
 
     DynaPlex::VarGroup policy_config6;
-    policy_config6.Add("id", "dt_base_stock");
+    policy_config6.Add("id", "balancing_base_stock");
     policy_config6.Add("shortfall", true);
-    policy_config6.Add("Huhetal", true);
     policy_config6.Add("balancing_upstream", false);
     policy_config6.Add("balancing_downstream", false);
 
@@ -2435,8 +2424,8 @@ int main() {
     // MDP config
     DynaPlex::VarGroup config;
     std::string id = "asml_assembly_nonstationary";
-    const int64_t NumberofNodes = 3;
-    const int64_t p = 50;
+    const int64_t NumberofNodes = 10;
+    const int64_t p = 100;
     const bool assembly = true;
     const bool stationary = false;
     const vector<bool> featureEng_vec = { false };
@@ -2473,7 +2462,7 @@ int main() {
     std::string folder_name = "20261109 run output revision";
 
     //TestTrajectories_notParallel();
-    TrainandTestPaperResults(folder_name, config, test_config, training_config, featureEng_vec, true, true, true, false, false);
+    TrainandTestPaperResults(folder_name, config, test_config, training_config, featureEng_vec, false, false, false, false, false);
     //ComputeShortfall();
     //ComparePolicies(false, false);
     //TestInventoryperNode(true);

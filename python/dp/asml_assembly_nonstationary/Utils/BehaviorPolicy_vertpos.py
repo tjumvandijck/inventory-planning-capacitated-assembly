@@ -218,14 +218,14 @@ def VisualizePolicyTimeDependent(stationary, p, save, all_policies, lowest_verti
         fig.subplots_adjust(top=0.84)
         if save:
             if stationary and p==50:
-                plt.savefig("MSOM-NN10_S_A_p50_avg_prod_quantity_per_vertpos.pdf", bbox_inches='tight')
+                plt.savefig("NN10_S_A_p50_avg_prod_quantity_per_vertpos.pdf", bbox_inches='tight')
             elif stationary and p==100:
                 plt.savefig("NN10_S_A_p100_avg_prod_quantity_per_vertpos.pdf", bbox_inches='tight')
             elif not stationary and p==50:
                 if all_policies:
-                    plt.savefig("MSOM-NN10_NS_A_p50_avg_prod_quantity_per_vertpos_all_policies.pdf", bbox_inches='tight')
+                    plt.savefig("NN10_NS_A_p50_avg_prod_quantity_per_vertpos_all_policies.pdf", bbox_inches='tight')
                 else:
-                    plt.savefig("MSOM-NN10_NS_A_p50_avg_prod_quantity_per_vertpos_focus.pdf", bbox_inches='tight')
+                    plt.savefig("NN10_NS_A_p50_avg_prod_quantity_per_vertpos_focus.pdf", bbox_inches='tight')
             elif not stationary and p==100:
                 plt.savefig("NN10_NS_A_p100__avg_prod_quantity_per_vertpos.pdf", bbox_inches='tight')
 
@@ -243,10 +243,3 @@ if __name__ == "__main__":
     print(save)
     VisualizePolicyTimeDependent(stationary, p, save, all_policies, lowest_vertical_pos)
 
-
-
-# # Add legend
-# ax.legend(loc='upper left')
-# plt.savefig("NN10_NS_A_p50_avg_prod_quantity_per_vertpos.pdf", bbox_inches='tight')
-#
-# plt.show()
