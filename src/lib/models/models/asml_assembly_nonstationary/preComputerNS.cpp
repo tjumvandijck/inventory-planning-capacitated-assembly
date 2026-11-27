@@ -230,7 +230,6 @@ preComputerNS::paramSystemInstance preComputerNS::loadSystem() const {
 
 		}
 		else {
-			// TODO: Check shortfall!!
 			CapacityofNodes_vec = { 10, 10, 10 };
 			MaxBacklog = 25;
 			moveProb_2vec = { {1.0,0} };

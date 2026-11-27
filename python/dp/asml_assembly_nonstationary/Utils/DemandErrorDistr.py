@@ -20,7 +20,7 @@ def plotForecastErrorDistr(probabilites, xticks):
 
     # Display the plot
     plt.tight_layout()
-    plt.savefig("ForecastErrorDistrNSlarge.pdf")
+    plt.savefig("ForecastErrorDistrNS-leadingcase.pdf")
 
     plt.show()
 
@@ -33,5 +33,9 @@ noiseProbSmallS = [0.04, 0.12, 0.16, 0.2, 0.23, 0.14, 0.06, 0.03, 0.02]
 xticksSmallS = [0+x for x in range(len(noiseProbSmallS))]
 noiseProblargeS = [0.02, 0.05, 0.1, 0.14, 0.2, 0.19, 0.1, 0.06, 0.05, 0.03, 0.02, 0.02, 0.01, 0.01]
 xticksLargeS = [4+x for x in range(len(noiseProblargeS))]
+
+
+noiseProblargeNS = [0.04, 0.18, 0.21, 0.23, 0.14, 0.09, 0.07, 0.04]
+xticksLeadingCaseNS = [- 3 + x for x in range(len(noiseProblargeNS))]
 
 plotForecastErrorDistr(noiseProblargeNS, xticksLargeNS)
